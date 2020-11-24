@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string.h>
 #include <unistd.h>
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -189,33 +190,41 @@ int main()
                 x_coord.push_back(points_right_side[i].x);
                 y_coord.push_back(points_right_side[i].y);
             }
-            PolynomialRegression<float> left_polyn;
-            left_polyn.fitIt(y_coord, x_coord, 2, right_coeff);
+            PolynomialRegression<float> right_polyn;
+            right_polyn.fitIt(y_coord, x_coord, 2, right_coeff);
         }
 
         vector<Point2f> right_line;
         for(float i = 0.0; i < dst_bin_clone.rows; i += 0.1) {
             Point2f point(right_coeff[0] + right_coeff[1]*i + right_coeff[2]*pow(i, 2), i);
-            left_line.push_back(point);
+            right_line.push_back(point);
             circle(debug, point, 5, Scalar(128), -1);
         }
 
+        string rad_info;
         if(left_line.size() > 0) {
             vector<Point2f> left_line_f;
             perspectiveTransform(left_line, left_line_f, Matrix.inv());
             for(int i = 0; i < left_line_f.size(); i++) {
                 circle(frame4lines, left_line_f[i], 5, Scalar(255, 255, 255), -1);
             }
+            float left_rad = abs( pow( 1 + pow(left_coeff[1] + 2*left_coeff[2]*dst_bin_clone.rows, 2), 3/2)/(2*left_coeff[2]) );
+            rad_info += "Left rad: " + to_string(left_rad) + ' ';
         }
 
+//        cout << right_line.size() << endl;
         if(right_line.size() > 0) {
             vector<Point2f> right_line_f;
             perspectiveTransform(right_line, right_line_f, Matrix.inv());
             for(int i = 0; i < right_line_f.size(); i++) {
                 circle(frame4lines, right_line_f[i], 5, Scalar(255, 255, 255), -1);
             }
+            float right_rad = abs( pow( 1 + pow(right_coeff[1] + 2*right_coeff[2]*dst_bin_clone.rows, 2), 3/2)/(2*right_coeff[2]) );
+//            cout << right_rad << endl;
+            rad_info += "Right rad: " + to_string(right_rad);
         }
 
+        putText(frame4lines, rad_info, Point(5, 50), 1, 2.0, Scalar(255, 255, 255));
 //        cout << points_left_side.size() << ' ' << points_right_side.size() << endl;
 
         if(dst_bin_points.size() > 0) {
